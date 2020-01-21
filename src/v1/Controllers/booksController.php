@@ -84,7 +84,7 @@ class BookController {
      * @return Response
      */
     public function viewBook($request, $response, $args) {
-
+ 
         $id = (int) $args['id'];
 
         $entityManager = $this->container->get('em');

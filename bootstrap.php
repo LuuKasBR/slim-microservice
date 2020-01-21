@@ -99,7 +99,7 @@ $config = Setup::createAnnotationMetadataConfiguration(array(__DIR__."/src/Model
 /**
  * Array de configurações da nossa conexão com o banco =)
  */
-$conn = array(
+$conn = array( 
     'driver' => 'pdo_sqlite',
     'path' => __DIR__ . '/db.sqlite',
 );

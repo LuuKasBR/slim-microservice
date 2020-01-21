@@ -7,10 +7,10 @@ $app->group('/v1', function() {
     /**
      * Dentro de v1, o recurso /book
      */
-    $this->group('/book', function() {
+    $this->group('/book', function() { 
         $this->get('', '\App\v1\Controllers\BookController:listBook');
         $this->post('', '\App\v1\Controllers\BookController:createBook');
-        
+         
         /**
          * Validando se tem um integer no final da URL
          */

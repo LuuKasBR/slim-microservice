@@ -10,10 +10,10 @@ use Firebase\JWT\JWT;
  * Controller de Autenticação
  */
 class AuthController {
-
+ 
     /**
      * Container
-     * @var object s
+     * @var object s 
      */
    protected $container;
    
