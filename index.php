@@ -1,36 +1,50 @@
 <?php
+
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
+
+use App\Models\Entity\Book;
+use Firebase\JWT\JWT;
+
 require 'bootstrap.php';
-
-
-/**
- * Inicio de tudo mlk xD
- * @var string
- */
-
-/*
-
-$app->get('/', function (Request $request, Response $response) use ($app) {
-    $response->getBody()->write("Opa, bombando");
-    return $response;
-});
-
-*/
 
 /**
  * Lista de todos os livros
  * @request curl -X GET http://localhost:8000/book
  */
 $app->get('/book', function (Request $request, Response $response) use ($app) {
+
     $entityManager = $this->get('em');
     $booksRepository = $entityManager->getRepository('App\Models\Entity\Book');
     $books = $booksRepository->findAll();
+
     $return = $response->withJson($books, 200)
         ->withHeader('Content-type', 'application/json');
     return $return;
 });
+
+
+/**
+ * HTTP Auth - Autenticação minimalista para retornar um JWT
+ */
+$app->get('/auth', function (Request $request, Response $response) use ($app) {
+
+    $key = $this->get("secretkey");
+
+    $token = array(
+        "user" => "@luukasbr",
+        "reddit" => "https://www.reddit.com/user/LuuKas1",
+        "github" => "https://github.com/luukasbr"
+    );
+
+    $jwt = JWT::encode($token, $key);
+
+    return $response->withJson(["auth-jwt" => $jwt], 200)
+        ->withHeader('Content-type', 'application/json');   
+});
+
+
 
 /**
  * Retornando mais informações do livro informado pelo id
@@ -39,31 +53,53 @@ $app->get('/book', function (Request $request, Response $response) use ($app) {
 $app->get('/book/{id}', function (Request $request, Response $response) use ($app) {
     $route = $request->getAttribute('route');
     $id = $route->getArgument('id');
+
     $entityManager = $this->get('em');
     $booksRepository = $entityManager->getRepository('App\Models\Entity\Book');
-    $book = $booksRepository->find($id);        
+    $book = $booksRepository->find($id); 
+
+    /**
+     * Verifica se existe um livro com a ID informada
+     */
+    if (!$book) {
+        throw new \Exception("Book not Found", 404);
+    }       
+
     $return = $response->withJson($book, 200)
         ->withHeader('Content-type', 'application/json');
     return $return;
 });
 
+/**
+ * Cadastra um novo <Livro></Livro>
+ * @request curl -X POST http://localhost:8000/book -H "Content-type: application/json" -d '{"name":"O Oceano no Fim do Caminho", "author":"Neil Gaiman"}'
+ */
 $app->post('/book', function (Request $request, Response $response) use ($app) {
+
     $params = (object) $request->getParams();
+
     /**
      * Pega o Entity Manager do nosso Container
      */
     $entityManager = $this->get('em');
+
     /**
      * Instância da nossa Entidade preenchida com nossos parametros do post
      */
-    $book = (new Book())->setName($params->name)
-        ->setAuthor($params->author);
+    $book = (new Book())->setName($request->getParam('name'))
+        ->setAuthor($request->getParam('author'));
     
     /**
      * Persiste a entidade no banco de dados
      */
     $entityManager->persist($book);
     $entityManager->flush();
+
+
+    $logger = $this->get('logger');
+    $logger->info('Livro criado!!', $book->getValues());
+
+
     $return = $response->withJson($book, 201)
         ->withHeader('Content-type', 'application/json');
     return $return;
@@ -74,27 +110,39 @@ $app->post('/book', function (Request $request, Response $response) use ($app) {
  * @request curl -X PUT http://localhost:8000/book/14 -H "Content-type: application/json" -d '{"name":"Deuses Americanos", "author":"Neil Gaiman"}'
  */
 $app->put('/book/{id}', function (Request $request, Response $response) use ($app) {
+
     /**
      * Pega o ID do livro informado na URL
      */
     $route = $request->getAttribute('route');
     $id = $route->getArgument('id');
+
     /**
      * Encontra o Livro no Banco
      */ 
     $entityManager = $this->get('em');
     $booksRepository = $entityManager->getRepository('App\Models\Entity\Book');
     $book = $booksRepository->find($id);   
+
+    /**
+     * Verifica se existe um livro com a ID informada
+     */
+    if (!$book) {
+        throw new \Exception("Book not Found", 404);
+    }   
+
     /**
      * Atualiza e Persiste o Livro com os parâmetros recebidos no request
      */
     $book->setName($request->getParam('name'))
         ->setAuthor($request->getParam('author'));
+
     /**
      * Persiste a entidade no banco de dados
      */
     $entityManager->persist($book);
     $entityManager->flush();        
+
     
     $return = $response->withJson($book, 200)
         ->withHeader('Content-type', 'application/json');
@@ -111,22 +159,30 @@ $app->delete('/book/{id}', function (Request $request, Response $response) use (
      */
     $route = $request->getAttribute('route');
     $id = $route->getArgument('id');
+
     /**
      * Encontra o Livro no Banco
      */ 
     $entityManager = $this->get('em');
     $booksRepository = $entityManager->getRepository('App\Models\Entity\Book');
     $book = $booksRepository->find($id);   
+
+    /**
+     * Verifica se existe um livro com a ID informada
+     */
+    if (!$book) {
+        throw new \Exception("Book not Found", 404);
+    }     
+
     /**
      * Remove a entidade
      */
     $entityManager->remove($book);
     $entityManager->flush(); 
+
     $return = $response->withJson(['msg' => "Deletando o livro {$id}"], 204)
         ->withHeader('Content-type', 'application/json');
     return $return;
 });
 
-
-
-?>
+$app->run();

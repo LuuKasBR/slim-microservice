@@ -23,6 +23,8 @@ class Book {
     /**
      * @return int id
      */
+  
+
     public function getId(){
         return $this->id;
     }
@@ -41,14 +43,31 @@ class Book {
     /**
      * @return Book()
      */
+  
+
+
+     /**
+     * @return App\Models\Entity\Book
+     */
     public function setName($name){
+
+        if (!$name && !is_string($name)) {
+            throw new \InvalidArgumentException("É necessário passar o nome do livro.", 400);
+        }
+
         $this->name = $name;
         return $this;  
     }
+
      /**
-     * @return Book()
+     * @return App\Models\Entity\Book
      */
     public function setAuthor($author) {
+
+        if (!$author && !is_string($author)) {
+            throw new \InvalidArgumentException("Autor é necessário.", 400);
+        }
+
         $this->author = $author;
         return $this;
     }
